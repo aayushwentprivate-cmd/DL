@@ -1,0 +1,23 @@
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# 1. Load and preprocess
+(xtr, ytr), (xte, yte) = keras.datasets.cifar10.load_data()
+xtr, xte = xtr / 255.0, xte / 255.0
+
+# 2. Define architecture
+model = keras.Sequential([
+    layers.Conv2D(32, 3, activation='relu', input_shape=(32, 32, 3)),
+    layers.MaxPooling2D(),
+    layers.Conv2D(64, 3, activation='relu'),
+    layers.MaxPooling2D(),
+    layers.Flatten(),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')])
+
+# 3. Train
+model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(xtr, ytr, epochs=10, validation_split=0.1)
+
+# 4. Estimate performance
+print("Test loss, acc:", model.evaluate(xte, yte))

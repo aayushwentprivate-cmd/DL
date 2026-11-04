@@ -1,0 +1,28 @@
+import numpy as np
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# Import and load data
+(x, y), _ = keras.datasets.mnist.load_data()
+x = x.reshape(-1, 784) / 255.0
+normal, anomaly = x[y == 0], x[y != 0]
+
+# Encoder -> latent representation
+inp = keras.Input(shape=(784,))
+z = layers.Dense(128, activation='relu')(inp)
+z = layers.Dense(32, activation='relu')(z)
+
+# Decoder -> reconstruct input
+d = layers.Dense(128, activation='relu')(z)
+out = layers.Dense(784, activation='sigmoid')(d)
+
+# Compile with optimizer, loss and metrics
+ae = keras.Model(inp, out)
+ae.compile(optimizer='adam', loss='mse', metrics=['mae'])
+ae.fit(normal, normal, epochs=15, batch_size=128, validation_split=0.1)
+
+# Detect anomalies using reconstruction error
+err = lambda d: np.mean((d - ae.predict(d)) ** 2, axis=1)
+thr = np.percentile(err(normal), 95)
+print("Normal flagged:", (err(normal) > thr).mean())
+print("Anomalies flagged:", (err(anomaly[:2000]) > thr).mean())

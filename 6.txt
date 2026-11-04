@@ -1,0 +1,48 @@
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# a. Load pre-trained CNN (trained on ImageNet)
+base = keras.applications.MobileNetV2(weights='imagenet', include_top=False,
+                                      input_shape=(160, 160, 3))
+
+# b. Freeze the convolutional layers
+base.trainable = False
+
+# c. Add custom classifier
+model = keras.Sequential([
+    base, layers.GlobalAveragePooling2D(),
+    layers.Dense(128, activation='relu'), layers.Dropout(0.3),
+    layers.Dense(2, activation='softmax')])
+
+import numpy as np
+import os
+
+# Create local directories
+os.makedirs('data/train/classA', exist_ok=True)
+os.makedirs('data/train/classB', exist_ok=True)
+os.makedirs('data/val/classA', exist_ok=True)
+os.makedirs('data/val/classB', exist_ok=True)
+
+# Generate dummy image files locally using numpy
+from tensorflow.keras.preprocessing import image
+
+for split in ['train', 'val']:
+    for cls in ['classA', 'classB']:
+        # Create 10 dummy images per class
+        for i in range(10):
+            # Random RGB pixel values (160x160)
+            img_array = np.random.randint(0, 256, (160, 160, 3), dtype=np.uint8)
+            img = image.array_to_img(img_array)
+            img.save(f'data/{split}/{cls}/img_{i}.jpg')
+
+# d. Train classifier layers (folder structure: data/train/classA, classB)
+train = keras.utils.image_dataset_from_directory('data/train', image_size=(160, 160))
+val = keras.utils.image_dataset_from_directory('data/val', image_size=(160, 160))
+model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(train, validation_data=val, epochs=5)
+
+# e. Fine-tune: unfreeze top layers with a low learning rate
+base.trainable = True
+for l in base.layers[:-30]: l.trainable = False
+model.compile(keras.optimizers.Adam(1e-5), 'sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(train, validation_data=val, epochs=3)

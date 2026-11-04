@@ -1,0 +1,27 @@
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# Load data
+(xtr, ytr), (xte, yte) = keras.datasets.mnist.load_data()
+xtr, xte = xtr / 255.0, xte / 255.0
+
+# Architecture
+model = keras.Sequential([
+    layers.Flatten(input_shape=(28, 28)),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')])
+
+# Train with SGD
+model.compile(optimizer=keras.optimizers.SGD(0.01),
+              loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+h = model.fit(xtr, ytr, epochs=10, batch_size=64, validation_split=0.1)
+
+# Evaluate
+print("Test loss, acc:", model.evaluate(xte, yte))
+
+# Plot loss and accuracy
+for m in ['loss', 'accuracy']:
+    plt.plot(h.history[m], label='train'); plt.plot(h.history['val_' + m], label='val')
+    plt.title(m); plt.legend(); plt.show()

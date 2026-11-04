@@ -1,0 +1,19 @@
+# TensorFlow: multiply two numbers
+import tensorflow as tf
+print("TensorFlow:", tf.constant(2) * tf.constant(3))
+
+# Keras: build a tiny model
+from tensorflow import keras
+m = keras.Sequential([keras.layers.Dense(4, input_shape=(3,)),
+                      keras.layers.Dense(1)])
+m.summary()
+
+# Theano: symbolic add
+import theano.tensor as T
+from theano import function
+a, b = T.dscalar(), T.dscalar()
+print("Theano:", function([a, b], a + b)(2, 3))
+
+# PyTorch: multiply two numbers
+import torch
+print("PyTorch:", torch.tensor(2) * torch.tensor(3))

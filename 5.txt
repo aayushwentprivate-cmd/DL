@@ -1,0 +1,28 @@
+import numpy as np
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# Data preparation
+text = "deep learning is a part of machine learning and learning needs data".split()
+vocab = sorted(set(text)); w2i = {w: i for i, w in enumerate(vocab)}
+V, win = len(vocab), 2
+
+# Generate training data (context words -> target word)
+X, Y = [], []
+for i in range(win, len(text) - win):
+    X.append([w2i[text[j]] for j in range(i - win, i + win + 1) if j != i])
+    Y.append(w2i[text[i]])
+X, Y = np.array(X), np.array(Y)
+
+# Train model
+model = keras.Sequential([
+    layers.Embedding(V, 10, input_length=2 * win),
+    layers.GlobalAveragePooling1D(),
+    layers.Dense(V, activation='softmax')])
+model.compile('adam', 'sparse_categorical_crossentropy')
+model.fit(X, Y, epochs=200, verbose=0)
+
+# Output: predicted target word for a context, plus the learned embeddings
+ctx = np.array([[w2i['is'], w2i['part'], w2i['machine'], w2i['learning']]])
+print("Predicted:", vocab[model.predict(ctx).argmax()])
+print(model.layers[0].get_weights()[0])
